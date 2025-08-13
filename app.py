@@ -70,6 +70,95 @@ def get_employee_by_email(email):
         if conn:
             conn.close()
 
+@app.route('/employees', methods=['GET'])
+def get_all_employees():
+    conn = get_db_connection()
+    if conn is None:
+        return format_response(500, True, request.path, message="Database connection failed")
+    
+    cur = None
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT id, email, company_id, company_name FROM employees")
+        employees = cur.fetchall()
+
+        payload = [
+            {
+                "id": str(employee["id"]),
+                "email": employee["email"],
+                "companyId": str(employee["company_id"]),
+                "companyName": employee["company_name"]
+            }
+            for employee in employees
+        ]
+        return format_response(200, False, request.path, payload=payload)
+    except Exception as e:
+        print(f"Error fetching employees: {e}")
+        return format_response(500, True, request.path, message=f"Internal server error: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+@app.route('/companies', methods=['GET'])
+def get_all_companies():
+    conn = get_db_connection()
+    if conn is None:
+        return format_response(500, True, request.path, message="Database connection failed")
+    
+    cur = None
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT company_id, name FROM companies")
+        companies = cur.fetchall()
+
+        payload = [
+            {
+                "companyId": str(company["company_id"]),
+                "name": company["name"]
+            }
+            for company in companies
+        ]
+        return format_response(200, False, request.path, payload=payload)
+    except Exception as e:
+        print(f"Error fetching companies: {e}")
+        return format_response(500, True, request.path, message=f"Internal server error: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+@app.route('/companies/<string:company_id>', methods=['GET'])
+def get_company_by_id(company_id):
+    conn = get_db_connection()
+    if conn is None:
+        return format_response(500, True, request.path, message="Database connection failed")
+
+    cur = None
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT company_id, name FROM companies WHERE company_id = %s", (company_id,))
+        company = cur.fetchone()
+
+        if company:
+            payload = {
+                "companyId": str(company["company_id"]),
+                "name": company["name"]
+            }
+            return format_response(200, False, request.path, payload=payload)
+        else:
+            return format_response(404, True, request.path, message=f"Company with ID '{company_id}' not found")
+    except Exception as e:
+        print(f"Error fetching company: {e}")
+        return format_response(500, True, request.path, message=f"Internal server error: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 @app.route('/companies', methods=['POST'])
 def create_company():
     data = request.get_json()
