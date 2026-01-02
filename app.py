@@ -242,3 +242,15 @@ def create_company():
 if __name__ == '__main__':
     # For development, you can run with debug=True
     app.run(debug=True, port=5000)
+
+@app.route('/order-status', methods=['GET'])
+def get_order_status():
+    payload = {
+        "eligibleForRefund": True
+    }
+    return format_response(
+        status_code=200,
+        error=False,
+        path=request.path,
+        payload=payload
+    )
